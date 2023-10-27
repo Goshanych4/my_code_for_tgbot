@@ -1,0 +1,72 @@
+def handler(event, context):
+    return {
+        'statusCode': 200,
+        'body': 'Hello World!',
+    }
+
+
+import telebot
+from random import randint, choice
+from telebot import types
+import json
+
+bot = telebot.TeleBot("6389427557:AAHv2bHTz2Ygfw8XGWn8mrviM39M2FYh-XA")
+
+def handler(event,context):
+    body = json.loads(event['body'])
+    update = telebot.types.Update.de_json(body)
+    bot.process_new_updates([update])
+
+button_start = types.KeyboardButton('/start')
+keyboard_start = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
+keyboard_start.add(button_start)
+
+keyboard_continue = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
+keyboard_continue.add(button_start)
+
+
+
+@bot.message_handler(commands = ['start'])
+def send_hello(message):
+    bot.send_message(message.from_user.id, 'Всем привет!\nЯ очень классный бот\nДавай дружить так!')
+    textek = 'Пока держи список команд:\n /play - сыграем в кости, это же весело!\n /lower - введи текст, случайно набранный капслоком, через пробел после команды\n /choose - введи после команды несколько вариантов, разделяя их с помощью ИЛИ, и я помогу выбрать!\n /guess - я уже загадал число от 1 до 5, а ты введи через пробел после команды число, которое я по-твоему загадал\n /call - введи через пробел имена двух людей, а я придумаю имя для их ребёнка!'
+    bot.send_message(message.from_user.id, textek, reply_markup=keyboard_start)
+
+@bot.message_handler(commands=['play'])
+def play_command(message):
+    bot_result = (randint(1, 6), randint(1, 6))
+    user_result = (randint(1, 6), randint(1, 6))
+    bot.send_message(message.from_user.id, f'Мне выпало {bot_result[0]} и {bot_result[1]}')
+    bot.send_message(message.from_user.id, f'Тебе выпало {user_result[0]} и {user_result[1]}')
+    if sum(bot_result) > sum(user_result):
+        bot.send_message(message.from_user.id, 'Я победил)')
+    elif sum(bot_result) < sum(user_result):
+        bot.send_message(message.from_user.id, 'Ты победил(а)!')
+    else:
+        bot.send_message(message.from_user.id, 'Ничья')
+
+@bot.message_handler(commands=['lower'])
+def repeat_message(message):
+    # bot.send_message(message.from_user.id, message.text.lower())
+    bot.send_message(message.from_user.id, ' '.join(message.text.split()[1:]).lower())
+
+@bot.message_handler(commands=['choose'])
+def choose_option(message):
+    args = ' '.join(message.text.split()[1:]).split(' ИЛИ ')
+    bot.send_message(message.from_user.id, choice(args))
+
+@bot.message_handler(commands=['guess'])
+def guesser(message):
+    thinks = randint(1, 5)
+    arg = int(message.text.split()[1])
+    if arg == thinks:
+        bot.send_message(message.from_user.id, 'Ты угадал(а), молодец!')
+    else: bot.send_message(message.from_user.id, 'К сожалению, ты не угадал(а). Правильный результат: ' + str(thinks))
+
+@bot.message_handler(commands=['call'])
+def future_name(message):
+    argum = ' '.join(message.text.split()[1:]).split()
+    parent1 = argum[0]
+    parent2 = argum[1]
+    child = parent1[:len(parent1)//2] + parent2[len(parent2)//2:]
+    bot.send_message(message.from_user.id, child)
